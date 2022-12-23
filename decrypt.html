@@ -1,0 +1,68 @@
+<html>
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/enc-base64.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/cipher-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/sha256.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/aes.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/hmac.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/pbkdf2.min.js"></script>
+
+    <script>
+      function decrypt() {
+        try {
+
+          document.getElementById("output").textContent = "";
+
+          const url = document.getElementById("url").value;
+          const pass = document.getElementById("pass").value;
+          const iterations = document.getElementById("iterations").value;
+
+          const params = new URL(url).searchParams;
+          const message = params.get("txt");
+
+          const salt = CryptoJS.enc.Hex.parse(message.substr(0, 32));
+          const iv = CryptoJS.enc.Hex.parse(message.substr(32, 32));
+          const encrypted = message.substring(64);
+
+          const key = CryptoJS.PBKDF2(pass, salt, {
+            keySize: 256 / 32,
+            iterations: iterations,
+            hasher: CryptoJS.algo.SHA256,
+          });
+
+          const decrypted = CryptoJS.AES.decrypt(encrypted, key, {
+            iv: iv,
+          });
+
+          try {
+
+            let msg = decrypted.toString(CryptoJS.enc.Utf8);
+            if (!msg) {
+              throw new Error();
+            }
+
+            // OK!
+            document.getElementById("output").textContent = msg;
+
+          } catch (e) {
+            document.getElementById("output").textContent =
+              "Decryption failure";
+          }
+          
+        } catch (e) {
+          console.error(e);
+          document.getElementById("output").textContent = e.message;
+        }
+      }
+    </script>
+  </head>
+  <body>
+    URL:<input type="text" id="url" size="20" /><br />
+    Passphrase:<input type="text" id="pass" size="20" /><br />
+    iterations:<input type="text" id="iterations" size="10" value="100000" /><br />
+    <button type="button" onclick="decrypt()">decryption</button>
+
+    <div id="output" style="margin-top: 20px; white-space: pre-wrap"></div>
+  </body>
+</html>
